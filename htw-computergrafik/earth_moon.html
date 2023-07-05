@@ -49,6 +49,7 @@
             document.body.appendChild(renderer.domElement);
 
             // Earth sphere
+            let radius = 1; // Earth's radius
             let earthGeometry = new THREE.SphereGeometry(1, 32, 32);
             let earthTexture = new THREE.TextureLoader().load('textures/earth_texture.jpg');
             earthTexture.offset.x = 0.33;
@@ -80,16 +81,42 @@
             let longitude = 13.4 * (Math.PI / 180);
 
             // Berlin indicator
-            let berlinGeometry = new THREE.SphereGeometry(0.02, 32, 32);
-            let berlinMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            let berlinGeometry = new THREE.ConeGeometry(0.11, 0.22, 32); 
+            let berlinMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000, emissive: 0x990000 });
             let berlinSurfaceMesh = new THREE.Mesh(berlinGeometry, berlinMaterial);
+            // create disc geometry for the base
+            let discGeometry = new THREE.CircleGeometry(0.15, 32);
+            let discTexture = new THREE.TextureLoader().load('textures/htw_berlin_logo.jpg');
+            discTexture.flipY = false;  // Flip the texture
+            let discMaterial = new THREE.MeshPhongMaterial({ map: discTexture, side: THREE.DoubleSide });
+            let discMesh = new THREE.Mesh(discGeometry, discMaterial);
 
-            let radius = 1; // Earth's radius
-            berlinSurfaceMesh.position.x = radius * Math.cos(latitude) * Math.sin(-longitude);
-            berlinSurfaceMesh.position.y = radius * Math.sin(latitude);
+            // adjust position so it is at the base of the cone
+            discMesh.position.y = -0.175;  // half the height of the cone
+
+            // tilt the disc
+            discMesh.rotation.x = - Math.PI / 3;  // tilt it 45 degrees
+
+            // add the disc to the cone
+            berlinSurfaceMesh.add(discMesh);
+            berlinSurfaceMesh.position.x = -radius * Math.cos(latitude) * Math.sin(longitude);
+            berlinSurfaceMesh.position.y = radius * Math.sin(latitude)+ 0.1;
             berlinSurfaceMesh.position.z = radius * Math.cos(latitude) * Math.cos(longitude);
 
-            earthMesh.add(berlinSurfaceMesh); // Add Berlin indicator to the Earth
+            berlinSurfaceMesh.rotation.x = latitude + Math.PI;  // rotate to sit on surface and flip
+            berlinSurfaceMesh.rotation.z = -longitude;  // rotate to sit on surface
+
+            earthMesh.add(berlinSurfaceMesh);  // Add Berlin indicator to the Earth
+
+            // // Adjust these for the position on Earth
+            // berlinSurfaceMesh.position.x = -radius * Math.cos(latitude) * Math.sin(longitude);
+            // berlinSurfaceMesh.position.y = radius * Math.sin(latitude);
+            // berlinSurfaceMesh.position.z = radius * Math.cos(latitude) * Math.cos(longitude);
+
+            // berlinSurfaceMesh.rotation.x = latitude;  // rotate to sit on surface
+            // berlinSurfaceMesh.rotation.z = -longitude;  // rotate to sit on surface
+
+            // earthMesh.add(berlinSurfaceMesh);  // Add Berlin indicator to the Earth
 
 
 
