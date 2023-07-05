@@ -11,7 +11,7 @@
 <body>
 
     <div id="info">
-        <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - Earth and Moon
+        <a href="https://github.com/HTW-IKG-Computergrafik/three.js" target="_blank" rel="noopener">github</a> - Earth and Moon
     </div>
 
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
@@ -92,10 +92,10 @@
             let discMesh = new THREE.Mesh(discGeometry, discMaterial);
 
             // adjust position so it is at the base of the cone
-            discMesh.position.y = -0.175;  // half the height of the cone
+            discMesh.position.y = -0.175; 
 
             // tilt the disc
-            discMesh.rotation.x = - Math.PI / 3;  // tilt it 45 degrees
+            discMesh.rotation.x = - Math.PI / 3;  
 
             // add the disc to the cone
             berlinSurfaceMesh.add(discMesh);
@@ -107,30 +107,6 @@
             berlinSurfaceMesh.rotation.z = -longitude;  // rotate to sit on surface
 
             earthMesh.add(berlinSurfaceMesh);  // Add Berlin indicator to the Earth
-
-            // // Adjust these for the position on Earth
-            // berlinSurfaceMesh.position.x = -radius * Math.cos(latitude) * Math.sin(longitude);
-            // berlinSurfaceMesh.position.y = radius * Math.sin(latitude);
-            // berlinSurfaceMesh.position.z = radius * Math.cos(latitude) * Math.cos(longitude);
-
-            // berlinSurfaceMesh.rotation.x = latitude;  // rotate to sit on surface
-            // berlinSurfaceMesh.rotation.z = -longitude;  // rotate to sit on surface
-
-            // earthMesh.add(berlinSurfaceMesh);  // Add Berlin indicator to the Earth
-
-
-
-            // // Create a large sphere with a star background texture
-            // let starGeometry = new THREE.SphereGeometry(1000, 64, 64);
-            // let starTexture = new THREE.TextureLoader().load('../stars_texture.jpg');
-            // let starMaterial = new THREE.MeshBasicMaterial({
-            //     map: starTexture,
-            //     side: THREE.BackSide
-            // });
-            // let starField = new THREE.Mesh(starGeometry, starMaterial);
-            // scene.add(starField);
-
-
 
             // lights
             let light = new THREE.DirectionalLight(0xffffff, 1, 1000);
