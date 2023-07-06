@@ -11,8 +11,8 @@
 <body>
 	<div>
 		<!-- define two buttons to pause and resume the animation -->
-		<button id="pauseButton">pause</button>
-		<button id="resumeButton">resume</button>
+		<button id="pauseResumeButton">pause</button>
+		<button id="cameraButton">perspective camera</button>
 	</div>
 
 	<!-- Import maps polyfill -->
@@ -36,52 +36,37 @@
 		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 		let scene, camera, controls, renderer;
+		let perspectiveCamera, orthographicCamera, usingPerspectiveCamera;
 		let planets, planetData, sunMesh;
 
-		let pauseButton, resumeButton;
+		let pauseResumeButton;
 		let isPaused;
+		let lastTimeStamp;
+		let delay;
 
 		init();
 		animate();
 
 		function init() {
-			pauseButton = document.getElementById('pauseButton');
-			resumeButton = document.getElementById('resumeButton');
-			isPaused = false;
-
-			pauseButton.addEventListener('click', function () {
-				isPaused = true;
-			}, false);
-
-			resumeButton.addEventListener('click', function () {
-				isPaused = false;
-				animate();
-			}, false);
-
+			//create buttons
+			initButtons();
 
 			// create scene, camera and renderer
 			scene = new THREE.Scene();
 
-			camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000);
-			camera.position.set(50, 50, 100);
-			camera.lookAt(scene.position);
+			initCameras();
+			camera = perspectiveCamera;
 
 			renderer = new THREE.WebGLRenderer({ antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(window.innerWidth, window.innerHeight);
 			document.body.appendChild(renderer.domElement);
 
-			// create controls
-			// When you import OrbitControls via ES6 imports, it's not necessary to use the THREE namespace.
-			// controls = new THREE.OrbitControls(camera, renderer.domElement);//for
-			controls = new OrbitControls(camera, renderer.domElement);
-			controls.enableDamping = true;
-			controls.dampingFactor = 0.05;
-
 			// create the sun sphere
 			let sunGeometry = new THREE.SphereGeometry(5, 32, 32);
 			let sunTexture = new THREE.TextureLoader().load('texture/2k_sun.jpg');
-			let sunMaterial = new THREE.MeshPhongMaterial({ map: sunTexture });
+			// let sunMaterial = new THREE.MeshPhongMaterial({ map: sunTexture, transparent: true });
+			let sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture, transparent: true });
 			sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
 			scene.add(sunMesh);
 
@@ -128,16 +113,152 @@
 				planets.push(planetMesh);
 			}
 
+			// stars
+			initStars();
+
 			// lights
-			const dirLight1 = new THREE.DirectionalLight(0xffffff);
-			dirLight1.position.set(1, 1, 1);
-			scene.add(dirLight1);
+			initLights();
+
+			// controls
+			initControls();
+
+			window.addEventListener('resize', onWindowResize);
+		}
+
+		function initButtons() {
+			pauseResumeButton = document.getElementById('pauseResumeButton');
+			isPaused = false;
+			delay = 0;
+			lastTimeStamp = Date.now();
+
+			pauseResumeButton.addEventListener('click', function () {
+				isPaused = !isPaused;
+				if (isPaused) {
+					delay = 0;
+					lastTimeStamp = Date.now();
+					pauseResumeButton.innerHTML = 'resume';
+				} else {
+					delay = Date.now() - lastTimeStamp;
+					lastTimeStamp = 0;
+					pauseResumeButton.innerHTML = 'pause';
+				}
+			}, false);
+
+			usingPerspectiveCamera = true;
+			cameraButton.addEventListener('click', function () {
+				usingPerspectiveCamera = !usingPerspectiveCamera;
+				if (usingPerspectiveCamera){
+					camera = perspectiveCamera;
+					cameraButton.innerHTML = 'perspective Camera';
+				} else {
+					camera = orthographicCamera;
+					cameraButton.innerHTML = 'orthographic Camera';
+				}
+			})
+		}
+
+		function initCameras() {
+			perspectiveCamera = new THREE.PerspectiveCamera(
+				40, 
+				window.innerWidth / window.innerHeight, 
+				1, 
+				1000
+			);
+			perspectiveCamera.position.set(50, 50, 100);
+			perspectiveCamera.lookAt(scene.position);
+
+			orthographicCamera = new THREE.OrthographicCamera(
+				window.innerWidth / -12,
+				window.innerWidth / 12,
+				window.innerHeight / 12,
+				window.innerHeight / -12,
+				1,
+				1000
+			);
+			orthographicCamera.position.set(50, 50, 100);
+			orthographicCamera.lookAt(scene.position);
+		}
+
+		function initControls() {
+			// create controls
+			// When you import OrbitControls via ES6 imports, it's not necessary to use the THREE namespace.
+			// controls = new THREE.OrbitControls(camera, renderer.domElement);//for
+			controls = new OrbitControls(camera, renderer.domElement);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.05;
+		}
+
+		function initStars() {
+			// stars
+
+			const r = 6.371, starsGeometry = [new THREE.BufferGeometry(), new THREE.BufferGeometry()];
+
+			const vertices1 = [];
+			const vertices2 = [];
+
+			const vertex = new THREE.Vector3();
+
+			for (let i = 0; i < 250; i++) {
+
+				vertex.x = Math.random() * 2 - 1;
+				vertex.y = Math.random() * 2 - 1;
+				vertex.z = Math.random() * 2 - 1;
+				vertex.multiplyScalar(r);
+
+				vertices1.push(vertex.x, vertex.y, vertex.z);
+
+			}
+
+			for (let i = 0; i < 1500; i++) {
+
+				vertex.x = Math.random() * 2 - 1;
+				vertex.y = Math.random() * 2 - 1;
+				vertex.z = Math.random() * 2 - 1;
+				vertex.multiplyScalar(r);
+
+				vertices2.push(vertex.x, vertex.y, vertex.z);
+
+			}
+
+			starsGeometry[0].setAttribute('position', new THREE.Float32BufferAttribute(vertices1, 3));
+			starsGeometry[1].setAttribute('position', new THREE.Float32BufferAttribute(vertices2, 3));
+
+			const starsMaterials = [
+				new THREE.PointsMaterial({ color: 0x9c9c9c, size: 2, sizeAttenuation: false }),
+				new THREE.PointsMaterial({ color: 0x9c9c9c, size: 1, sizeAttenuation: false }),
+				new THREE.PointsMaterial({ color: 0x7c7c7c, size: 2, sizeAttenuation: false }),
+				new THREE.PointsMaterial({ color: 0x838383, size: 1, sizeAttenuation: false }),
+				new THREE.PointsMaterial({ color: 0x5a5a5a, size: 2, sizeAttenuation: false }),
+				new THREE.PointsMaterial({ color: 0x5a5a5a, size: 1, sizeAttenuation: false })
+			];
+
+			for (let i = 10; i < 30; i++) {
+
+				const stars = new THREE.Points(starsGeometry[i % 2], starsMaterials[i % 6]);
+
+				stars.rotation.x = Math.random() * 6;
+				stars.rotation.y = Math.random() * 6;
+				stars.rotation.z = Math.random() * 6;
+				stars.scale.setScalar(i * 10);
+
+				stars.matrixAutoUpdate = false;
+				stars.updateMatrix();
+
+				scene.add(stars);
+			}
+		}
+
+		function initLights() {
+			// const dirLight1 = new THREE.DirectionalLight(0xffffff);
+			// dirLight1.position.set(0, 0, 0);
+			// scene.add(dirLight1);
+
+			const posLight1 = new THREE.PointLight(0xffffff, 1);
+			posLight1.position.set(0, 0, 0);
+			scene.add(posLight1);
 
 			const ambientLight = new THREE.AmbientLight(0x222222);
 			scene.add(ambientLight);
-			//
-
-			window.addEventListener('resize', onWindowResize);
 		}
 
 		function onWindowResize() {
@@ -150,30 +271,25 @@
 		}
 
 		function animate() {
-			if (isPaused) {
-				return;
+			if (!isPaused) {
+				// sun rotation
+				sunMesh.rotation.y += 0.001;
+
+				// Planetary rotation and revolution
+				for (let i = 0; i < planets.length; i++) {
+					let planet = planetData[i];
+					let planetMesh = planets[i];
+
+					planetMesh.rotation.y += planet.rotationSpeed; // rotation
+					planetMesh.position.x = planet.orbitRadius * Math.cos((Date.now() - delay) * planet.revolutionSpeed);
+					planetMesh.position.z = planet.orbitRadius * Math.sin((Date.now() - delay) * planet.revolutionSpeed);
+				}
 			}
-			console.log("animate");
 			requestAnimationFrame(animate);
-
-			// sun rotation
-			sunMesh.rotation.y += 0.01;
-
-			// Planetary rotation and revolution
-			for (let i = 0; i < planets.length; i++) {
-				let planet = planetData[i];
-				let planetMesh = planets[i];
-
-				planetMesh.rotation.y += planet.rotationSpeed; // rotation
-				planetMesh.position.x = planet.orbitRadius * Math.cos(Date.now() * planet.revolutionSpeed); // revolution
-				planetMesh.position.z = planet.orbitRadius * Math.sin(Date.now() * planet.revolutionSpeed); // revolution
-			}
-
 			// only required if controls.enableDamping = true, or if controls.autoRotate = true
 			controls.update();
 
 			render();
-
 		}
 
 		function render() {
