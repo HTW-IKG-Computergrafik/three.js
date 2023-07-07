@@ -9,11 +9,6 @@
 </head>
 
 <body>
-	<div>
-		<!-- define two buttons to pause and resume the animation -->
-		<a href="earth_moon.html">earth_moon_system</a>
-	</div>
-
 	<!-- Import maps polyfill -->
 	<!-- Remove this when import maps will be widely supported -->
 	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
@@ -323,6 +318,50 @@
 
 		}
 
+		// Define a global variable to store the currently selected object
+		let selectedObject = null;
+
+		// Create a raycaster
+		let raycaster = new THREE.Raycaster();
+		let mouse = new THREE.Vector2();
+
+		// Listen for mouse click event
+		window.addEventListener('mousedown', onMouseDown, false);
+
+		function onMouseDown(event) {
+			// Calculate the normalized device coordinates of the mouse click position
+			mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+			mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+			// Update the origin of the raycaster
+			raycaster.setFromCamera(mouse, camera);
+
+			// Calculate the intersection between the ray and objects in the scene
+			let intersects = raycaster.intersectObjects(scene.children);
+
+			// If there is an intersection, select the first intersected object
+			if (intersects.length > 0) {
+				// Reset the style of the previously selected object
+				if (selectedObject) {
+					// Reset the style of the previously selected object to its original style
+					// ...
+				}
+
+				// Select the new object
+				selectedObject = intersects[0].object;
+				console.log(selectedObject);
+
+				// Modify the style of the selected object
+				// ...
+			} else {
+				// If no object is selected, reset the style of the previously selected object
+				if (selectedObject) {
+					// Reset the style of the previously selected object to its original style
+					// ...
+					selectedObject = null;
+				}
+			}
+		}
 	</script>
 
 </body>
