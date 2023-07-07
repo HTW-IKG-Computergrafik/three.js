@@ -11,8 +11,7 @@
 <body>
 	<div>
 		<!-- define two buttons to pause and resume the animation -->
-		<button id="pauseResumeButton">pause</button>
-		<button id="cameraButton">perspective camera</button>
+		<a href="earth_moon.html">earth_moon_system</a>
 	</div>
 
 	<!-- Import maps polyfill -->
@@ -34,22 +33,43 @@
 
 		import Stats from 'three/addons/libs/stats.module.js';
 		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+		let gui;
 
 		let scene, camera, controls, renderer;
-		let perspectiveCamera, orthographicCamera, usingPerspectiveCamera;
+
+		let perspectiveCamera, orthographicCamera;
+		let cameraType = { type: 'Perspective' };
+
+		let sunMaterial;
 		let planets, planetData, sunMesh;
 
-		let pauseResumeButton;
-		let isPaused;
-		let lastTimeStamp;
-		let delay;
+		let moveControlToggle;
+		let moveControl = {
+			paused: false,
+			lastTimeStamp: 0,
+			delay: 0,
+			togglePause: function () {
+				this.paused = !this.paused;
+				updateMoveControlToggle();
+				if (this.paused) {
+					this.delay = 0;
+					this.lastTimeStamp = Date.now();
+				} else {
+					this.delay = Date.now() - this.lastTimeStamp;
+					this.lastTimeStamp = 0;
+					animate();
+				}
+			}
+		};;
 
 		init();
 		animate();
 
 		function init() {
 			//create buttons
-			initButtons();
+			// initButtons();
 
 			// create scene, camera and renderer
 			scene = new THREE.Scene();
@@ -62,14 +82,93 @@
 			renderer.setSize(window.innerWidth, window.innerHeight);
 			document.body.appendChild(renderer.domElement);
 
+			// sun
+			initSun();
+
+			// planets
+			initPlanets();
+
+			// stars
+			initStars();
+
+			// lights
+			initLights();
+
+			// controls
+			initControls();
+
+			// GUI
+			initGUI();
+
+			window.addEventListener('resize', onWindowResize);
+		}
+
+		function initGUI() {
+			gui = new GUI();
+
+			const sceneFolder = gui.addFolder('Scene');
+			moveControlToggle = sceneFolder.add(moveControl, 'togglePause').name('pause');
+
+			const cameraFolder = gui.addFolder('Camera');
+			cameraFolder.add(cameraType, 'type', ['Orthographic', 'Perspective']).onChange(function (value) {
+				if (value === 'Orthographic') {
+					camera = orthographicCamera;
+				} else if (value === 'Perspective') {
+					camera = perspectiveCamera;
+				}
+			});
+		}
+
+		function updateMoveControlToggle() {
+			if (moveControl.paused) {
+				moveControlToggle.name('resume');
+			} else {
+				moveControlToggle.name('pause');
+			}
+		}
+
+		function initCameras() {
+			perspectiveCamera = new THREE.PerspectiveCamera(
+				40,
+				window.innerWidth / window.innerHeight,
+				1,
+				1000
+			);
+			perspectiveCamera.position.set(50, 50, 100);
+			perspectiveCamera.lookAt(scene.position);
+
+			orthographicCamera = new THREE.OrthographicCamera(
+				window.innerWidth / -12,
+				window.innerWidth / 12,
+				window.innerHeight / 12,
+				window.innerHeight / -12,
+				1,
+				1000
+			);
+			orthographicCamera.position.set(50, 50, 100);
+			orthographicCamera.lookAt(scene.position);
+		}
+
+		function initControls() {
+			// create controls
+			// When you import OrbitControls via ES6 imports, it's not necessary to use the THREE namespace.
+			// controls = new THREE.OrbitControls(camera, renderer.domElement);//for
+			controls = new OrbitControls(camera, renderer.domElement);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.05;
+		}
+
+		function initSun() {
 			// create the sun sphere
 			let sunGeometry = new THREE.SphereGeometry(5, 32, 32);
 			let sunTexture = new THREE.TextureLoader().load('texture/2k_sun.jpg');
 			// let sunMaterial = new THREE.MeshPhongMaterial({ map: sunTexture, transparent: true });
-			let sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture, transparent: true });
+			sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
 			sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
 			scene.add(sunMesh);
+		}
 
+		function initPlanets() {
 			// create the planets
 			planets = [];
 
@@ -112,80 +211,6 @@
 				scene.add(planetMesh);
 				planets.push(planetMesh);
 			}
-
-			// stars
-			initStars();
-
-			// lights
-			initLights();
-
-			// controls
-			initControls();
-
-			window.addEventListener('resize', onWindowResize);
-		}
-
-		function initButtons() {
-			pauseResumeButton = document.getElementById('pauseResumeButton');
-			isPaused = false;
-			delay = 0;
-			lastTimeStamp = Date.now();
-
-			pauseResumeButton.addEventListener('click', function () {
-				isPaused = !isPaused;
-				if (isPaused) {
-					delay = 0;
-					lastTimeStamp = Date.now();
-					pauseResumeButton.innerHTML = 'resume';
-				} else {
-					delay = Date.now() - lastTimeStamp;
-					lastTimeStamp = 0;
-					pauseResumeButton.innerHTML = 'pause';
-				}
-			}, false);
-
-			usingPerspectiveCamera = true;
-			cameraButton.addEventListener('click', function () {
-				usingPerspectiveCamera = !usingPerspectiveCamera;
-				if (usingPerspectiveCamera){
-					camera = perspectiveCamera;
-					cameraButton.innerHTML = 'perspective Camera';
-				} else {
-					camera = orthographicCamera;
-					cameraButton.innerHTML = 'orthographic Camera';
-				}
-			})
-		}
-
-		function initCameras() {
-			perspectiveCamera = new THREE.PerspectiveCamera(
-				40, 
-				window.innerWidth / window.innerHeight, 
-				1, 
-				1000
-			);
-			perspectiveCamera.position.set(50, 50, 100);
-			perspectiveCamera.lookAt(scene.position);
-
-			orthographicCamera = new THREE.OrthographicCamera(
-				window.innerWidth / -12,
-				window.innerWidth / 12,
-				window.innerHeight / 12,
-				window.innerHeight / -12,
-				1,
-				1000
-			);
-			orthographicCamera.position.set(50, 50, 100);
-			orthographicCamera.lookAt(scene.position);
-		}
-
-		function initControls() {
-			// create controls
-			// When you import OrbitControls via ES6 imports, it's not necessary to use the THREE namespace.
-			// controls = new THREE.OrbitControls(camera, renderer.domElement);//for
-			controls = new OrbitControls(camera, renderer.domElement);
-			controls.enableDamping = true;
-			controls.dampingFactor = 0.05;
 		}
 
 		function initStars() {
@@ -271,7 +296,7 @@
 		}
 
 		function animate() {
-			if (!isPaused) {
+			if (!moveControl.paused) {
 				// sun rotation
 				sunMesh.rotation.y += 0.001;
 
@@ -281,8 +306,8 @@
 					let planetMesh = planets[i];
 
 					planetMesh.rotation.y += planet.rotationSpeed; // rotation
-					planetMesh.position.x = planet.orbitRadius * Math.cos((Date.now() - delay) * planet.revolutionSpeed);
-					planetMesh.position.z = planet.orbitRadius * Math.sin((Date.now() - delay) * planet.revolutionSpeed);
+					planetMesh.position.x = planet.orbitRadius * Math.cos((Date.now() - moveControl.delay) * planet.revolutionSpeed);
+					planetMesh.position.z = planet.orbitRadius * Math.sin((Date.now() - moveControl.delay) * planet.revolutionSpeed);
 				}
 			}
 			requestAnimationFrame(animate);
