@@ -20,7 +20,7 @@
 					"three/addons/": "../examples/jsm/"
 				}
 			}
-		</script>
+	</script>
 
 	<script type="module">
 
@@ -38,7 +38,7 @@
 		let cameraType = { type: 'Perspective' };
 
 		let sunMaterial;
-		let planets, planetData, sunMesh;
+		let planets, planetData, sunMesh, earthMesh;
 
 		let moveControlToggle;
 		let moveControl = {
@@ -169,16 +169,28 @@
 
 			// Planetary parameters (radius, orbital radius, rotation speed, revolution speed)
 			planetData = [
-				{ name: 'Mercury', radius: 0.5, orbitRadius: 12, rotationSpeed: 0.001, revolutionSpeed: 0.003, color: 0x0000ff },
-				{ name: 'Venus', radius: 0.7, orbitRadius: 16, rotationSpeed: 0.0008, revolutionSpeed: 0.002, color: 0x00ff00 },
-				{ name: 'Earth', radius: 1, orbitRadius: 20, rotationSpeed: 0.001, revolutionSpeed: 0.0015, color: 0x00ffff },
-				{ name: 'Mars', radius: 0.8, orbitRadius: 24, rotationSpeed: 0.001, revolutionSpeed: 0.0012, color: 0xff0000 },
-				{ name: 'Jupiter', radius: 2, orbitRadius: 30, rotationSpeed: 0.0005, revolutionSpeed: 0.0009, color: 0xff00ff },
-				{ name: 'Saturn', radius: 1.8, orbitRadius: 36, rotationSpeed: 0.0004, revolutionSpeed: 0.0007, color: 0xffff00 },
-				{ name: 'Uranus', radius: 1.3, orbitRadius: 42, rotationSpeed: 0.0003, revolutionSpeed: 0.0005, color: 0xffffff },
-				{ name: 'Neptune', radius: 1.2, orbitRadius: 48, rotationSpeed: 0.0002, revolutionSpeed: 0.0003, color: 0xf0ffff },
-				// { name: 'Pluto', radius: 0.4, orbitRadius: 52, rotationSpeed: 0.001, revolutionSpeed: 0.0001, color: 0x0fffff }
+				{ name: 'Mercury', radius: 0.5, orbitRadius: 12, rotationSpeed: 0.001, revolutionSpeed: 0.003, inclination: 0.03, color: 0x0000ff },
+				{ name: 'Venus', radius: 0.7, orbitRadius: 16, rotationSpeed: 0.0008, revolutionSpeed: 0.002, inclination: 2.64, color: 0x00ff00 },
+				{ name: 'Earth', radius: 1, orbitRadius: 20, rotationSpeed: 0.001, revolutionSpeed: 0.0015, inclination: 23.44, color: 0x00ffff },
+				{ name: 'Mars', radius: 0.8, orbitRadius: 24, rotationSpeed: 0.001, revolutionSpeed: 0.0012, inclination: 25.19, color: 0xff0000 },
+				{ name: 'Jupiter', radius: 2, orbitRadius: 30, rotationSpeed: 0.0005, revolutionSpeed: 0.0009, inclination: 3.13, color: 0xff00ff },
+				{ name: 'Saturn', radius: 1.8, orbitRadius: 36, rotationSpeed: 0.0004, revolutionSpeed: 0.0007, inclination: 26.73, color: 0xffff00 },
+				{ name: 'Uranus', radius: 1.3, orbitRadius: 42, rotationSpeed: 0.0003, revolutionSpeed: 0.0005, inclination: 97.77, color: 0xffffff },
+				{ name: 'Neptune', radius: 1.2, orbitRadius: 48, rotationSpeed: 0.0002, revolutionSpeed: 0.0003, inclination: 28.32, color: 0xf0ffff },
 			];
+
+
+			/* 			planetData = [
+							{ name: 'Mercury', radius: 0.383, orbitRadius: 57.91, rotationSpeed: 0.0042, revolutionSpeed: 0.0479, color: 0x0000ff },
+							{ name: 'Venus', radius: 0.949, orbitRadius: 108.2, rotationSpeed: -0.0032, revolutionSpeed: 0.035, color: 0x00ff00 },
+							{ name: 'Earth', radius: 1, orbitRadius: 149.6, rotationSpeed: 0.001, revolutionSpeed: 0.0298, color: 0x00ffff },
+							{ name: 'Mars', radius: 0.532, orbitRadius: 227.9, rotationSpeed: 0.001, revolutionSpeed: 0.0241, color: 0xff0000 },
+							{ name: 'Jupiter', radius: 10.97, orbitRadius: 778.5, rotationSpeed: 0.001, revolutionSpeed: 0.0131, color: 0xff00ff },
+							{ name: 'Saturn', radius: 9.14, orbitRadius: 1433.5, rotationSpeed: 0.001, revolutionSpeed: 0.0097, color: 0xffff00 },
+							{ name: 'Uranus', radius: 3.98, orbitRadius: 2872.5, rotationSpeed: -0.0007, revolutionSpeed: 0.0068, color: 0xffffff },
+							{ name: 'Neptune', radius: 3.86, orbitRadius: 4495.1, rotationSpeed: 0.0007, revolutionSpeed: 0.0054, color: 0xf0ffff }
+						]; */
+
 
 			// Create the planet and add it to the scene
 			for (let i = 0; i < planetData.length; i++) {
@@ -201,8 +213,31 @@
 				planetMesh.position.set(orbitRadius, 0, 0);
 				planetMesh.rotation.y = Math.PI / 2; // initial rotation angle
 				orbit.rotation.x = Math.PI / 2;
-
 				scene.add(orbit);
+
+				// 将度数转换为弧度
+				let inclinationAngle = THREE.MathUtils.degToRad(planet.inclination);
+				// 创建一个包含倾斜角度的欧拉角
+				let inclinationEuler = new THREE.Euler(inclinationAngle, 0, 0, 'XYZ');
+				// 应用倾斜角度到行星的自转角度
+				planetMesh.rotation.setFromVector3(inclinationEuler);
+
+				// 创建行星的自转轴线条
+				let axisGeometry = new THREE.BufferGeometry().setFromPoints([
+					new THREE.Vector3(planetMesh.position.x, -planet.radius * 2, planetMesh.position.z),
+					new THREE.Vector3(planetMesh.position.x, planet.radius * 2, planetMesh.position.z),
+				]);
+				let axisMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+				let axisLine = new THREE.Line(axisGeometry, axisMaterial);
+
+				// 创建一个包含行星网格对象和自转轴线条的组对象
+				let planetGroup = new THREE.Group();
+				planetGroup.add(planetMesh);
+				planetGroup.add(axisLine);
+				// scene.add(planetGroup);
+				// planets.push(planetGroup);
+
+				scene.add(axisLine);
 				scene.add(planetMesh);
 				planets.push(planetMesh);
 			}
@@ -303,6 +338,12 @@
 					planetMesh.rotation.y += planet.rotationSpeed; // rotation
 					planetMesh.position.x = planet.orbitRadius * Math.cos((Date.now() - moveControl.delay) * planet.revolutionSpeed);
 					planetMesh.position.z = planet.orbitRadius * Math.sin((Date.now() - moveControl.delay) * planet.revolutionSpeed);
+
+					// if (planet.name === 'Earth') {
+					// 	perspectiveCamera.position.copy(planetMesh.position);
+					// 	perspectiveCamera.lookAt(sunMesh.position);
+					// }
+
 				}
 			}
 			requestAnimationFrame(animate);
@@ -344,24 +385,27 @@
 				// Reset the style of the previously selected object
 				if (selectedObject) {
 					// Reset the style of the previously selected object to its original style
-					// ...
 				}
 
 				// Select the new object
 				selectedObject = intersects[0].object;
-				console.log(selectedObject);
 
 				// Modify the style of the selected object
-				// ...
+				if (selectedObject === sunMesh) {
+					window.open('./earth_moon.html')
+				}
+
 			} else {
 				// If no object is selected, reset the style of the previously selected object
 				if (selectedObject) {
 					// Reset the style of the previously selected object to its original style
-					// ...
+					selectedObject = null;
 					selectedObject = null;
 				}
 			}
 		}
+
+
 	</script>
 
 </body>
