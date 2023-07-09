@@ -46,9 +46,11 @@
 		let perspectiveCamera, orthographicCamera;
 		let cameraType = { type: 'Perspective' };
 		let usingEarthPerspective = false;
+		let earthPerspectiveCoords = { longitude: 13.4, latitude: 52.5 };
 
 		let sunMaterial;
-		let planets, planetData, planetAxises, subsolarLines, planetNameTexts, sunMesh, earthMesh;
+		let planets, planetData, orbits, planetAxises, equatorPlanes, subsolarLines, planetNameTexts, sunMesh, earthMesh, orbit;
+		let showOrbitPlane = { orbit_plane: false };
 		let showRotationAxis = { rotation_axis: false };
 		let showSubsolarLine = { direct_sunlight: false };
 
@@ -114,16 +116,16 @@
 			const dateFolder = gui.addFolder('Date');
 			monthControl = dateFolder.add(dateData, 'month', 1, 12, 1).name('Month').onChange(function () {
 				if (moveControl.paused) {
-					timer = 0;
-					timer -= (dateData.month - 1) * 30 * (360 / (1 * 1000) * animationSpeed.speed / 5);
-					timer -= (dateData.day - 1) * (360 / (1 * 1000) * animationSpeed.speed / 5);
+					// timer = 0;
+					// timer -= (dateData.month - 1) * 30 * (360 / (1 * 1000) * animationSpeed.speed / 5);
+					// timer -= (dateData.day - 1) * (360 / (1 * 1000) * animationSpeed.speed / 5);
 				}
 			});
 			dateControl = dateFolder.add(dateData, 'day', 1, 30, 1).name('Day').onChange(function () {
 				if (moveControl.paused) {
-					timer = 0;
-					timer -= (dateData.month - 1) * 30 * (360 / (1 * 1000) * animationSpeed.speed / 5);
-					timer -= (dateData.day - 1) * (360 / (1 * 1000) * animationSpeed.speed / 5);
+					// timer = 0;
+					// timer -= (dateData.month - 1) * 30 * (360 / (1 * 1000) * animationSpeed.speed / 5);
+					// timer -= (dateData.day - 1) * (360 / (1 * 1000) * animationSpeed.speed / 5);
 				}
 			});
 			moveControlToggle = dateFolder.add(moveControl, 'togglePause').name('pause');
@@ -133,14 +135,23 @@
 			sceneFolder.add(animationSpeed, 'speed', 1, 10);
 
 			const cameraFolder = gui.addFolder('Camera');
+			let latitudeControl = cameraFolder.add(earthPerspectiveCoords, 'latitude', -90, 90);
+			latitudeControl.domElement.style.display = 'none';
 			cameraFolder.add(cameraType, 'type', ['Orthographic', 'Perspective', 'Earth Perspective']).onChange(function (value) {
 				if (value === 'Orthographic') {
+					latitudeControl.domElement.style.display = 'none';
 					camera = orthographicCamera;
+					camera.position.set(100, 50, 0);
+					camera.lookAt(scene.position);
 					usingEarthPerspective = false;
 				} else if (value === 'Perspective') {
+					latitudeControl.domElement.style.display = 'none';
 					camera = perspectiveCamera;
+					camera.position.set(100, 50, 0);
+					camera.lookAt(scene.position);
 					usingEarthPerspective = false;
 				} else if (value === 'Earth Perspective') {
+					latitudeControl.domElement.style.display = 'block';
 					camera = perspectiveCamera;
 					usingEarthPerspective = true;
 				}
@@ -149,6 +160,7 @@
 			const planetFolder = gui.addFolder('Planet');
 			planetFolder.add(showRotationAxis, 'rotation_axis', false, true);
 			planetFolder.add(showSubsolarLine, 'direct_sunlight', false, true);
+			planetFolder.add(showOrbitPlane, 'orbit_plane', false, true);
 		}
 
 		function updateMoveControlToggle() {
@@ -199,10 +211,6 @@
 			sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
 			sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
 
-			// let inclinationAngle = THREE.MathUtils.degToRad(97);
-			// let inclinationEuler = new THREE.Euler(inclinationAngle, 0, 0, 'XYZ');
-			// sunMesh.rotation.setFromVector3(inclinationEuler);
-
 			scene.add(sunMesh);
 		}
 
@@ -210,18 +218,20 @@
 			// create the planets
 			planets = [];
 			planetAxises = [];
+			equatorPlanes = [];
 			subsolarLines = [];
+			orbits = [];
 
 			// Planetary parameters (radius, orbital radius, rotation speed, revolution speed)
 			planetData = [
-				{ name: 'Mercury', radius: 0.5, orbitRadius: 12, rotationSpeed: 0.001, revolutionSpeed: 0.003, inclination: 0.03, color: 0x0000ff },
-				{ name: 'Venus', radius: 0.7, orbitRadius: 16, rotationSpeed: 0.0008, revolutionSpeed: 0.002, inclination: 2.64, color: 0x00ff00 },
-				{ name: 'Earth', radius: 1, orbitRadius: 20, rotationSpeed: 0.001, revolutionSpeed: 0.0015, inclination: 23.44, color: 0x00ffff },
-				{ name: 'Mars', radius: 0.8, orbitRadius: 24, rotationSpeed: 0.001, revolutionSpeed: 0.0012, inclination: 25.19, color: 0xff0000 },
-				{ name: 'Jupiter', radius: 2, orbitRadius: 30, rotationSpeed: 0.0005, revolutionSpeed: 0.0009, inclination: 3.13, color: 0xff00ff },
-				{ name: 'Saturn', radius: 1.8, orbitRadius: 36, rotationSpeed: 0.0004, revolutionSpeed: 0.0007, inclination: 26.73, color: 0xffff00 },
-				{ name: 'Uranus', radius: 1.3, orbitRadius: 42, rotationSpeed: 0.0003, revolutionSpeed: 0.0005, inclination: 97.77, color: 0xffffff },
-				{ name: 'Neptune', radius: 1.2, orbitRadius: 48, rotationSpeed: 0.0002, revolutionSpeed: 0.0003, inclination: 28.32, color: 0xf0ffff },
+				{ name: 'Mercury', radius: 0.5, orbitRadius: 12, rotationSpeed: 0.1, revolutionSpeed: 0.003, inclination: 0.03, color: 0x0000ff },
+				{ name: 'Venus', radius: 0.7, orbitRadius: 16, rotationSpeed: 0.08, revolutionSpeed: 0.002, inclination: 2.64, color: 0x00ff00 },
+				{ name: 'Earth', radius: 1, orbitRadius: 20, rotationSpeed: 0.1, revolutionSpeed: 0.0015, inclination: 23.44, color: 0x00ffff },
+				{ name: 'Mars', radius: 0.8, orbitRadius: 24, rotationSpeed: 0.1, revolutionSpeed: 0.0012, inclination: 25.19, color: 0xff0000 },
+				{ name: 'Jupiter', radius: 2, orbitRadius: 30, rotationSpeed: 0.05, revolutionSpeed: 0.0009, inclination: 3.13, color: 0xff00ff },
+				{ name: 'Saturn', radius: 1.8, orbitRadius: 36, rotationSpeed: 0.04, revolutionSpeed: 0.0007, inclination: 26.73, color: 0xffff00 },
+				{ name: 'Uranus', radius: 1.3, orbitRadius: 42, rotationSpeed: 0.03, revolutionSpeed: 0.0005, inclination: 97.77, color: 0xffffff },
+				{ name: 'Neptune', radius: 1.2, orbitRadius: 48, rotationSpeed: 0.02, revolutionSpeed: 0.0003, inclination: 28.32, color: 0xf0ffff },
 			];
 
 			// Planetary parameters (radius, orbital radius, rotation speed, revolution speed)
@@ -257,7 +267,10 @@
 				planetMesh.position.set(orbitRadius, 0, 0);
 				planetMesh.rotation.y = Math.PI;
 				orbit.rotation.x = Math.PI / 2;
+				orbit.visible = showOrbitPlane.orbit_plane;
+
 				scene.add(orbit);
+				orbits.push(orbit);
 				scene.add(planetMesh);
 				planets.push(planetMesh);
 
@@ -295,9 +308,31 @@
 				scene.add(axisLine);
 				planetAxises.push(axisLine);
 
+				// Create planetary orbits
+				let equatorRadius = planet.radius * 2;
+				let equatorPoints = 100;
+				let equatorGeometry = new THREE.CircleGeometry(equatorRadius, equatorPoints);
+				let equatorMaterial = new THREE.MeshBasicMaterial({ transparent: true, color: 0x222222 }); // 设置轨道线的颜色
+				let equatorPlane = new THREE.Line(equatorGeometry, equatorMaterial);
+				equatorPlane.rotation.x = planetMesh.rotation.x;
+				// Convert degrees to radians
+				// Create Euler angles with the inclination angle
+				let inclinationEuler2 = new THREE.Euler(Math.PI / 2 + inclinationAngle, 0, 0, 'XYZ');
+				equatorPlane.rotation.setFromVector3(inclinationEuler2);
+				equatorPlane.position.copy(planetMesh.position);
+
+				equatorPlane.visible = showRotationAxis.rotation_axis;
+				scene.add(equatorPlane);
+				equatorPlanes.push(equatorPlane);
+
 				// Create a line geometry using the planet's position and the surface point
 				let lineGeometry = new THREE.BufferGeometry().setFromPoints([sunMesh.position, planetMesh.position]);
-				let lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+				let lineMaterial;
+				if (planet.name === 'Earth') {
+					lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+				} else {
+					lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+				}
 				let lineMesh = new THREE.Line(lineGeometry, lineMaterial);
 
 				// Add the line mesh to the scene
@@ -305,6 +340,20 @@
 				lineMesh.visible = showSubsolarLine.direct_sunlight;
 				scene.add(lineMesh);
 				subsolarLines.push(lineMesh);
+
+				// if (planet.name === 'Earth') {
+				// 	let latitude = earthPerspectiveCoords.latitude * (Math.PI / 180);
+				// 	// earthPerspectiveCoords.longitude -= planet.rotationSpeed;
+				// 	console.log(earthPerspectiveCoords.longitude);
+				// 	let longitude = earthPerspectiveCoords.longitude * (Math.PI / 180);
+				// 	//adjust camera position according to latitude and longitude
+				// 	earthPerspectivePostion.x = planetMesh.position.x + (-planet.radius * Math.cos(latitude) * Math.sin(longitude));
+				// 	earthPerspectivePostion.y = planetMesh.position.y + (planet.radius * Math.sin(latitude) + 0.1);
+				// 	// perspectiveCamera.position.y = planetMesh.position.y + (planet.radius * Math.sin(latitude));
+				// 	earthPerspectivePostion.z = planetMesh.position.z + (planet.radius * Math.cos(latitude) * Math.cos(longitude));
+
+				// 	earthPerspectiveLookat = planetMesh.position + 2 * (perspectiveCamera.position - planetMesh.position);
+				// }
 			}
 		}
 
@@ -394,7 +443,6 @@
 			if (!moveControl.paused) {
 				// update timer
 				timer -= 360 / (1 * 1000) * animationSpeed.speed / 5;
-				// console.log((((parseInt((-timer) / 30) + 1) + 2) % 12 + 1) + ', ' + Math.floor((-timer + 20) % 30 + 1));
 				dateData.month = (parseInt(-timer / 30) + 2) % 12 + 1;
 				dateData.day = Math.floor((-timer + 20) % 30 + 1);
 				monthControl.setValue(dateData.month);
@@ -418,6 +466,10 @@
 
 					planetAxises[i].position.copy(planetMesh.position);
 					planetAxises[i].visible = showRotationAxis.rotation_axis;
+					equatorPlanes[i].position.copy(planetMesh.position);
+					equatorPlanes[i].visible = showRotationAxis.rotation_axis;
+
+					orbits[i].visible = showOrbitPlane.orbit_plane;
 
 					// Get the array of vertices
 					let lineGeometry = subsolarLines[i].geometry;
@@ -432,30 +484,25 @@
 					if (usingEarthPerspective && planet.name === 'Earth') {
 						// perspectiveCamera.position.copy(planetMesh.position);
 
-						// Latitude and Longitude of Berlin, converted to radians
-						// let latitude = 52.5 * (Math.PI / 180);
-						let latitude = 0 * (Math.PI / 180);
-						let longitude = 13.4 * (Math.PI / 180);
+						let latitude = earthPerspectiveCoords.latitude * (Math.PI / 180);
+						// earthPerspectiveCoords.longitude -= planet.rotationSpeed;
+						console.log(earthPerspectiveCoords.longitude);
+						let longitude = earthPerspectiveCoords.longitude * (Math.PI / 180);
 						//adjust camera position according to latitude and longitude
 						perspectiveCamera.position.x = planetMesh.position.x + (-planet.radius * Math.cos(latitude) * Math.sin(longitude));
-						// perspectiveCamera.position.y = planetMesh.position.y + (planet.radius * Math.sin(latitude) + 0.1);
-						perspectiveCamera.position.y = planetMesh.position.y + (planet.radius * Math.sin(latitude));
+						perspectiveCamera.position.y = planetMesh.position.y + (planet.radius * Math.sin(latitude) + 0.1);
+						// perspectiveCamera.position.y = planetMesh.position.y + (planet.radius * Math.sin(latitude));
 						perspectiveCamera.position.z = planetMesh.position.z + (planet.radius * Math.cos(latitude) * Math.cos(longitude));
 
+
 						// perspectiveCamera.position.copy(planetMesh.position);
-						perspectiveCamera.lookAt(sunMesh.position);
+						// perspectiveCamera.lookAt(planetMesh.position + 2 * (perspectiveCamera.position - planetMesh.position));
+						// perspectiveCamera.lookAt(perspectiveCamera.position);
 					}
 
-
-					// if (planet.name === 'Earth') {
-					// 	// 公转角度增加
-					// 	earthRevolutionAngle += planet.revolutionSpeed;
-
-					// 	// 根据公转角度计算当前日期
-					// 	const currentDate = new Date(earthRevolutionAngle * earthRevolutionPeriod * 1000);
-
-					// 	// 输出当前日期
-					// 	console.log(currentDate);
+					// if (usingEarthPerspective && planet.name === 'Earth'){
+					// 	perspectiveCamera.position.copy(earthPerspectivePostion);
+					// 	perspectiveCamera.lookAt(earthPerspectiveLookat);
 					// }
 				}
 			}
