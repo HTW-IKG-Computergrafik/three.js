@@ -35,8 +35,10 @@
 
         let scene, camera, renderer;
         let earthMesh, moonMesh, berlinMesh, berlinLine;
-        let controls;  // global variable for the OrbitControls
-        let animationId = null; // For canceling the animation frame request
+        let controls;  
+        let animationId = null;  
+        const tilt = 23.5 * Math.PI / 180;
+        let isRunning = true; 
 
         init();
         animate();
@@ -150,6 +152,7 @@
             animationId = requestAnimationFrame(animate);
 
             earthMesh.rotation.y += 0.005;
+            earthMesh.rotation.x = tilt;
             moonMesh.rotation.y += 0.005;
 
             moonMesh.position.x = 2 * Math.sin(Date.now() * 0.001);
@@ -164,13 +167,35 @@
             cancelAnimationFrame(animationId); // Stop the animation
             this.disabled = true;
             document.getElementById('resumeButton').disabled = false;
+            isRunning = false; // Animation is not running
         });
 
         document.getElementById('resumeButton').addEventListener('click', function () {
             animate(); // Restart the animation
             this.disabled = true;
             document.getElementById('pauseButton').disabled = false;
+            isRunning = true; // Animation is running
         });
+
+        window.addEventListener('keydown', function (event) {
+            // If the key pressed was space bar
+            if (event.keyCode === 32) {
+                event.preventDefault(); // Prevent the default action (scrolling)
+                if (isRunning) {
+                    // If the animation is running, pause it
+                    cancelAnimationFrame(animationId);
+                    document.getElementById('pauseButton').disabled = true;
+                    document.getElementById('resumeButton').disabled = false; 
+                    isRunning = false;
+                } else {
+                    // If the animation is not running, resume it
+                    animate();
+                    document.getElementById('pauseButton').disabled = false;
+                    document.getElementById('resumeButton').disabled = true;
+                    isRunning = true;
+                }
+            }
+        }, false);
 
     </script>
 
