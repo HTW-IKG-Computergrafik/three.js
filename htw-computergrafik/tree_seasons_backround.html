@@ -3,8 +3,13 @@
   <head>
     <title>Seasonal 3D Tree</title>
     <style>
-      body { margin: 0; }
-      canvas { display: block; }
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
     </style>
   </head>
   <body>
@@ -15,9 +20,9 @@
           renderer,
           geometry,
           group,
-          leafGeometry;
+          leafGeometry,
+          plane;
 
-     
       var materials = {
         spring: {
           leafDark: new THREE.MeshLambertMaterial({ color: 0x91E56E }),
@@ -50,12 +55,23 @@
       function init() {
         scene = new THREE.Scene();
 
-        camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera = new THREE.PerspectiveCamera(
+          100,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
         camera.position.z = 5;
 
-        geometry = new THREE.BoxGeometry(1, 1, 1);
+        var geometry = new THREE.PlaneGeometry(60, 60);
+        var texture = new THREE.TextureLoader().load('HTW-Berlin-WH-2019-_DSC91058-HTW_Berlin.jpg');
+        var material = new THREE.MeshBasicMaterial({ map: texture });
+        plane = new THREE.Mesh(geometry, material);
+        plane.position.z = -10; // Adjust the position to bring the plane behind the tree
+        scene.add(plane);
 
-        leafGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2); 
+        geometry = new THREE.BoxGeometry(1, 1, 1);
+        leafGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
 
         var light = new THREE.DirectionalLight(0xEEFFD3, 1);
         light.position.set(0, 0, 1);
@@ -70,25 +86,24 @@
         scene.add(light);
 
         var stemMaterial = new THREE.MeshLambertMaterial({ color: 0x7D5A4F });
-
         var trunk = new THREE.Mesh(geometry, stemMaterial);
         trunk.position.set(0, 0, 0);
-        trunk.scale.set(0.3, 2, 0.3); 
+        trunk.scale.set(0.3, 2, 0.3);
 
         var branchMaterial = new THREE.MeshLambertMaterial({ color: 0x7D5A4F });
         var branch = new THREE.Mesh(geometry, branchMaterial);
         branch.position.set(0, 1.5, 0);
-        branch.scale.set(0.7, 0.4, 0.7); 
+        branch.scale.set(0.7, 0.4, 0.7);
 
-        var numLeaves = 240; 
+        var numLeaves = 240;
 
         var leaveDark = createLeaf(numLeaves, materials[seasons[currentSeason]].leafDark);
-        leaveDark.position.set(0, 2, 0); 
-        leaveDark.scale.set(1.2, 1.2, 1.2); 
+        leaveDark.position.set(0, 2, 0);
+        leaveDark.scale.set(1.2, 1.2, 1.2);
 
         var leaveLight = createLeaf(numLeaves, materials[seasons[currentSeason]].leafLight);
-        leaveLight.position.set(0, 2, 0); 
-        leaveLight.scale.set(1.3, 0.8, 1.3); 
+        leaveLight.position.set(0, 2, 0);
+        leaveLight.scale.set(1.3, 0.8, 1.3);
 
         var ground = new THREE.Mesh(geometry, materials[seasons[currentSeason]].leafDarkDark);
         ground.position.set(0, -1, 0);
@@ -99,7 +114,7 @@
         tree.add(leaveLight);
         tree.add(ground);
         tree.add(trunk);
-        tree.add(branch); 
+        tree.add(branch);
 
         tree.rotation.y = 1;
         tree.rotation.x = 0.5;
@@ -110,20 +125,20 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
 
         document.body.appendChild(renderer.domElement);
+        
       }
 
-      
       function createLeaf(numLeaves, material) {
         var leafGroup = new THREE.Group();
 
         for (var i = 0; i < numLeaves; i++) {
           var leaf = new THREE.Mesh(leafGeometry, material);
-          leaf.position.x = Math.random() * 2 - 1; 
-          leaf.position.y = Math.random() * 2 - 1; 
-          leaf.position.z = Math.random() * 2 - 1; 
-          leaf.rotation.x = Math.random() * 2 * Math.PI; 
-          leaf.rotation.y = Math.random() * 2 * Math.PI; 
-          leaf.rotation.z = Math.random() * 2 * Math.PI; 
+          leaf.position.x = Math.random() * 2 - 1;
+          leaf.position.y = Math.random() * 2 - 1;
+          leaf.position.z = Math.random() * 2 - 1;
+          leaf.rotation.x = Math.random() * 2 * Math.PI;
+          leaf.rotation.y = Math.random() * 2 * Math.PI;
+          leaf.rotation.z = Math.random() * 2 * Math.PI;
 
           leafGroup.add(leaf);
         }
@@ -134,15 +149,27 @@
       function render() {
         requestAnimationFrame(render);
 
-        // Every 3 seconds
-        if (Date.now() % 3000 < 50) {
+        // Update day and night cycles
+        var time = Date.now() * 0.0001;
+        var intensity = Math.sin(time) * 0.5 + 0.5;
+        var color = new THREE.Color().setHSL(time % 1, 0.5, 0.5);
+
+        scene.children.forEach(function (child) {
+          if (child instanceof THREE.DirectionalLight) {
+            child.intensity = intensity;
+            child.color = color;
+          }
+        });
+
+        // Update seasons
+        if (Date.now() % 30000 < 50) {
           currentSeason = (currentSeason - 1 + seasons.length) % seasons.length;
           var season = seasons[currentSeason];
 
-          tree.children[0].children.forEach(function(leaf) {
+          tree.children[0].children.forEach(function (leaf) {
             leaf.material = materials[season].leafDark;
           });
-          tree.children[1].children.forEach(function(leaf) {
+          tree.children[1].children.forEach(function (leaf) {
             leaf.material = materials[season].leafLight;
           });
           tree.children[2].material = materials[season].leafDarkDark;
