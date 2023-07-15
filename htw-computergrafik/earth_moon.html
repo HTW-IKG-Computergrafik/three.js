@@ -48,6 +48,8 @@
 		};
         let monthControl, dateControl;
 
+        let discMesh;
+
         // create GUI
         let gui;
         let perspectiveCamera, orthographicCamera;
@@ -144,7 +146,7 @@
             let discTexture = new THREE.TextureLoader().load('textures/htw_berlin_logo.jpg');
             discTexture.flipY = false;  // Flip the texture
             let discMaterial = new THREE.MeshPhongMaterial({ map: discTexture, side: THREE.DoubleSide });
-            let discMesh = new THREE.Mesh(discGeometry, discMaterial);
+            discMesh = new THREE.Mesh(discGeometry, discMaterial);
 
             // adjust position so it is at the base of the cone
             discMesh.position.y = -0.175; 
@@ -267,8 +269,8 @@
                 selectedObject = intersects[0].object;
 
                 // Modify the style of the selected object
-                if (selectedObject === earthMesh) {
-                    window.open('./tree_seasons_background.html')
+                if (selectedObject === discMesh) {
+                    window.open('./tree_seasons_leave_change_but_scuffed_colors.html')
                 }
 
             } else {
