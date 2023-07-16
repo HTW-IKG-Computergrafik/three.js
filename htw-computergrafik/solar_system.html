@@ -110,6 +110,7 @@
 			window.addEventListener('resize', onWindowResize);
 		}
 
+		// Implementation referring to https://sbcode.net/threejs/dat-gui/, refactored by Weijie
 		function initGUI() {
 			gui = new GUI();
 
@@ -214,6 +215,7 @@
 			scene.add(sunMesh);
 		}
 
+		// Planetary parameters given by ChatGPT, adjusted by Weijie to show a better animation effect
 		function initPlanets() {
 			// create the planets
 			planets = [];
@@ -233,19 +235,6 @@
 				{ name: 'Uranus', radius: 1.3, orbitRadius: 42, rotationSpeed: 0.03, revolutionSpeed: 0.0005, inclination: 97.77, color: 0xffffff },
 				{ name: 'Neptune', radius: 1.2, orbitRadius: 48, rotationSpeed: 0.02, revolutionSpeed: 0.0003, inclination: 28.32, color: 0xf0ffff },
 			];
-
-			// Planetary parameters (radius, orbital radius, rotation speed, revolution speed)
-			// planetData = [
-			// 	{ name: 'Mercury', radius: 0.5, orbitRadius: 12, rotationSpeed: 0.01, revolutionSpeed: 0.0003, inclination: 0.03, color: 0x0000ff },
-			// 	{ name: 'Venus', radius: 0.7, orbitRadius: 16, rotationSpeed: 0.008, revolutionSpeed: 0.0002, inclination: 2.64, color: 0x00ff00 },
-			// 	{ name: 'Earth', radius: 1, orbitRadius: 20, rotationSpeed: 0.01, revolutionSpeed: 0.00015, inclination: 23.44, color: 0x00ffff },
-			// 	{ name: 'Mars', radius: 0.8, orbitRadius: 24, rotationSpeed: 0.01, revolutionSpeed: 0.00012, inclination: 25.19, color: 0xff0000 },
-			// 	{ name: 'Jupiter', radius: 2, orbitRadius: 30, rotationSpeed: 0.005, revolutionSpeed: 0.00009, inclination: 3.13, color: 0xff00ff },
-			// 	{ name: 'Saturn', radius: 1.8, orbitRadius: 36, rotationSpeed: 0.004, revolutionSpeed: 0.00007, inclination: 26.73, color: 0xffff00 },
-			// 	{ name: 'Uranus', radius: 1.3, orbitRadius: 42, rotationSpeed: 0.003, revolutionSpeed: 0.00005, inclination: 97.77, color: 0xffffff },
-			// 	{ name: 'Neptune', radius: 1.2, orbitRadius: 48, rotationSpeed: 0.002, revolutionSpeed: 0.00003, inclination: 28.32, color: 0xf0ffff },
-			// ];
-
 
 			// Create the planet and add it to the scene
 			for (let i = 0; i < planetData.length; i++) {
@@ -274,6 +263,7 @@
 				scene.add(planetMesh);
 				planets.push(planetMesh);
 
+				// adjust the rotation axis with inclination
 				// Convert degrees to radians
 				let inclinationAngle = THREE.MathUtils.degToRad(planet.inclination);
 				// Create Euler angles with the inclination angle
@@ -328,6 +318,7 @@
 				// Create a line geometry using the planet's position and the surface point
 				let lineGeometry = new THREE.BufferGeometry().setFromPoints([sunMesh.position, planetMesh.position]);
 				let lineMaterial;
+				// for earth we have a red line for direct sunlight
 				if (planet.name === 'Earth') {
 					lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 				} else {
@@ -340,23 +331,10 @@
 				lineMesh.visible = showSubsolarLine.direct_sunlight;
 				scene.add(lineMesh);
 				subsolarLines.push(lineMesh);
-
-				// if (planet.name === 'Earth') {
-				// 	let latitude = earthPerspectiveCoords.latitude * (Math.PI / 180);
-				// 	// earthPerspectiveCoords.longitude -= planet.rotationSpeed;
-				// 	console.log(earthPerspectiveCoords.longitude);
-				// 	let longitude = earthPerspectiveCoords.longitude * (Math.PI / 180);
-				// 	//adjust camera position according to latitude and longitude
-				// 	earthPerspectivePostion.x = planetMesh.position.x + (-planet.radius * Math.cos(latitude) * Math.sin(longitude));
-				// 	earthPerspectivePostion.y = planetMesh.position.y + (planet.radius * Math.sin(latitude) + 0.1);
-				// 	// perspectiveCamera.position.y = planetMesh.position.y + (planet.radius * Math.sin(latitude));
-				// 	earthPerspectivePostion.z = planetMesh.position.z + (planet.radius * Math.cos(latitude) * Math.cos(longitude));
-
-				// 	earthPerspectiveLookat = planetMesh.position + 2 * (perspectiveCamera.position - planetMesh.position);
-				// }
 			}
 		}
 
+		// original implementation in https://threejs.org/examples/#webgl_camera, code refactored by Weijie
 		function initStars() {
 			// stars
 
@@ -457,11 +435,7 @@
 					let planetMesh = planets[i];
 
 					planetMesh.rotation.y += planet.rotationSpeed; // rotation
-					// planetMesh.position.x = planet.orbitRadius * Math.cos((Date.now() - moveControl.delay) * planet.revolutionSpeed);
-					// planetMesh.position.x = planet.orbitRadius * Math.cos(timer * planet.revolutionSpeed);
 					planetMesh.position.x = planet.orbitRadius * Math.cos(THREE.MathUtils.degToRad(timer) * planet.revolutionSpeed / planetData[2].revolutionSpeed);
-					// planetMesh.position.z = planet.orbitRadius * Math.sin((Date.now() - moveControl.delay) * planet.revolutionSpeed);
-					// planetMesh.position.z = planet.orbitRadius * Math.sin(timer * planet.revolutionSpeed);
 					planetMesh.position.z = planet.orbitRadius * Math.sin(THREE.MathUtils.degToRad(timer) * planet.revolutionSpeed / planetData[2].revolutionSpeed);
 
 					planetAxises[i].position.copy(planetMesh.position);
@@ -491,7 +465,6 @@
 						//adjust camera position according to latitude and longitude
 						perspectiveCamera.position.x = planetMesh.position.x + (-planet.radius * Math.cos(latitude) * Math.sin(longitude));
 						perspectiveCamera.position.y = planetMesh.position.y + (planet.radius * Math.sin(latitude) + 0.1);
-						// perspectiveCamera.position.y = planetMesh.position.y + (planet.radius * Math.sin(latitude));
 						perspectiveCamera.position.z = planetMesh.position.z + (planet.radius * Math.cos(latitude) * Math.cos(longitude));
 
 
