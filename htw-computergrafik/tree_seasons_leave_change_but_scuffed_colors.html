@@ -2,28 +2,44 @@
 <html>
   <head>
     <title>Seasonal 3D Tree</title>
+    <div id="seasonLabel" class="label"></div>
+    <div id="daytimeLabel" class="label"></div>
+
     <style>
       body {
         margin: 0;
         overflow: hidden;
       }
-      #background {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url(./_MG_22948_1920px_1920.jpg);
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-      }
+      
       canvas {
         display: block;
       }
     </style>
+    <style>
+      .label-container {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      
+      .label {
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 18px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      }
+      </style>
+      
+      
   </head>
   <body>
+    <div class="label-container">
+      <div id="seasonLabel" class="label"></div>
+      <div id="daytimeLabel" class="label"></div>
+    </div>    
     <script src="https://threejs.org/build/three.js"></script>
     <script>
       var scene,
@@ -78,7 +94,7 @@
         var texture = new THREE.TextureLoader().load('textures/HTW-Berlin-WH-2019-_DSC91058-HTW_Berlin.jpg');
         var material = new THREE.MeshBasicMaterial({ map: texture });
         plane = new THREE.Mesh(geometry, material);
-        plane.position.z = -10; // Adjust the position to bring the plane behind the tree
+        plane.position.z = -10;
         scene.add(plane);
 
         geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -116,17 +132,16 @@
         tree.add(branch);
         tree.add(ground);
 		
-		 seasons.forEach(function (season) {
-			var leafDark = createLeaf(season, materials[season].leafDark);
-			leafDark.position.set(0, 2, 0);
-			leafDark.scale.set(1.2, 1.2, 1.2);
-			tree.add(leafDark);
+        var leafDark = createLeaf(seasons[currentSeason], materials[seasons[currentSeason]].leafDark);
+        leafDark.position.set(0, 2, 0);
+        leafDark.scale.set(1.2, 1.2, 1.2);
+        tree.add(leafDark);
 
-			var leafLight = createLeaf(season, materials[season].leafLight);
-			leafLight.position.set(0, 2, 0);
-			leafLight.scale.set(1.3, 0.8, 1.3);
-			tree.add(leafLight);
-		});
+        var leafLight = createLeaf(seasons[currentSeason], materials[seasons[currentSeason]].leafLight);
+        leafLight.position.set(0, 2, 0);
+        leafLight.scale.set(1.3, 0.8, 1.3);
+        tree.add(leafLight);
+
 
         tree.rotation.y = 1;
         tree.rotation.x = 0.5;
@@ -169,11 +184,18 @@
         return leafGroup;
       }
 
+      function getDaytime() {
+        var intensity = Math.sin(Date.now() * 0.0001) * 0.5 + 0.5;
+        var daytime = intensity * 24;
+        return daytime.toFixed(2) + " hours";
+      }
+
+
       function render() {
         requestAnimationFrame(render);
 
         // Update day and night cycles
-        var time = Date.now() * 0.0001;
+        var time = Date.now() * 0.001;
         var intensity = Math.sin(time) * 0.5 + 0.5;
         var color = new THREE.Color().setHSL(time % 1, 0.5, 0.5);
 
@@ -184,17 +206,14 @@
           }
         });
 
-        // Update seasons
         if (Date.now() % 30000 < 50) {
-			    currentSeason = (currentSeason - 1 + seasons.length) % seasons.length;
-			    var season = seasons[currentSeason];
+          currentSeason = (currentSeason - 1 + seasons.length) % seasons.length;
+          var season = seasons[currentSeason];
 
-          // Remove existing leaf groups from the tree
           tree.children.slice(3).forEach(function (child) {
             tree.remove(child);
           });
 
-          // Add new leaf groups based on the current season
           var leafDark = createLeaf(season, materials[season].leafDark);
           leafDark.position.set(0, 2, 0);
           leafDark.scale.set(1.2, 1.2, 1.2);
@@ -204,13 +223,29 @@
           leafLight.position.set(0, 2, 0);
           leafLight.scale.set(1.3, 0.8, 1.3);
           tree.add(leafLight);
+
+          // Update ground material
+          tree.remove(ground);
+          var groundMaterial = materials[season].leafDarkDark;
+          ground = new THREE.Mesh(geometry, groundMaterial);
+          ground.position.set(0, -1, 0);
+          ground.scale.set(2.4, 0.8, 2.4);
+          tree.add(ground);
         }
 
         tree.rotation.y += 0.007;
 
+        var seasonLabel = document.getElementById("seasonLabel");
+        seasonLabel.innerText = "Current Season: " + seasons[currentSeason];
+
+        // Update daytime label
+        var daytimeLabel = document.getElementById("daytimeLabel");
+        daytimeLabel.innerText = "Current Daytime: " + getDaytime();
 
         renderer.render(scene, camera);
       }
+
+
     </script>
   </body>
 </html>
