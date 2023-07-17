@@ -73,6 +73,10 @@
 			}
 		};;
 
+		let selectedObject = null;
+		let raycaster = new THREE.Raycaster();
+		let mouse = new THREE.Vector2();
+
 		init();
 		animate();
 
@@ -108,6 +112,8 @@
 			initGUI();
 
 			window.addEventListener('resize', onWindowResize);
+
+			window.addEventListener('mousedown', onMouseDown, false);
 		}
 
 		// referring to https://sbcode.net/threejs/dat-gui/, implemented by Weijie
@@ -179,7 +185,6 @@
 				1,
 				1000
 			);
-			// perspectiveCamera.position.set(50, 50, 100);
 			perspectiveCamera.position.set(100, 50, 0);
 			perspectiveCamera.lookAt(scene.position);
 
@@ -259,6 +264,7 @@
 				orbits.push(orbit);
 				scene.add(planetMesh);
 				planets.push(planetMesh);
+
 
 				// adjust the rotation axis with inclination
 				// Convert degrees to radians
@@ -465,11 +471,6 @@
 						// perspectiveCamera.lookAt(planetMesh.position + 2 * (perspectiveCamera.position - planetMesh.position));
 						// perspectiveCamera.lookAt(perspectiveCamera.position);
 					}
-
-					// if (usingEarthPerspective && planet.name === 'Earth'){
-					// 	perspectiveCamera.position.copy(earthPerspectivePostion);
-					// 	perspectiveCamera.lookAt(earthPerspectiveLookat);
-					// }
 				}
 			}
 			requestAnimationFrame(animate);
@@ -487,10 +488,6 @@
 
 		// Use Raycaster Mouse Picking to enable scene change
 		// referring to https://sbcode.net/threejs/mousepick/, implemented by Weijie
-		let selectedObject = null;
-		let raycaster = new THREE.Raycaster();
-		let mouse = new THREE.Vector2();
-		window.addEventListener('mousedown', onMouseDown, false);
 		function onMouseDown(event) {
 			// Calculate the normalized device coordinates of the mouse click position
 			mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -511,9 +508,11 @@
 
 				// Select the new object
 				selectedObject = intersects[0].object;
+				console.log('object selected!');
+				console.log(selectedObject);
 
 				// Modify the style of the selected object
-				if (selectedObject === earthMesh) {
+				if (selectedObject === sunMesh) {
 					window.open('./earth_moon.html')
 				}
 
