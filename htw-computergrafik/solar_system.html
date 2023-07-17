@@ -110,7 +110,7 @@
 			window.addEventListener('resize', onWindowResize);
 		}
 
-		// Implementation referring to https://sbcode.net/threejs/dat-gui/, refactored by Weijie
+		// referring to https://sbcode.net/threejs/dat-gui/, implemented by Weijie
 		function initGUI() {
 			gui = new GUI();
 
@@ -197,8 +197,6 @@
 
 		function initControls() {
 			// create controls
-			// When you import OrbitControls via ES6 imports, it's not necessary to use the THREE namespace.
-			// controls = new THREE.OrbitControls(camera, renderer.domElement);//for
 			controls = new OrbitControls(camera, renderer.domElement);
 			controls.enableDamping = true;
 			controls.dampingFactor = 0.05;
@@ -208,7 +206,6 @@
 			// create the sun sphere
 			let sunGeometry = new THREE.SphereGeometry(5, 32, 32);
 			let sunTexture = new THREE.TextureLoader().load('texture/2k_sun.jpg');
-			// let sunMaterial = new THREE.MeshPhongMaterial({ map: sunTexture, transparent: true });
 			sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
 			sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
 
@@ -396,10 +393,6 @@
 		}
 
 		function initLights() {
-			// const dirLight1 = new THREE.DirectionalLight(0xffffff);
-			// dirLight1.position.set(0, 0, 0);
-			// scene.add(dirLight1);
-
 			const posLight1 = new THREE.PointLight(0xffffff, 1);
 			posLight1.position.set(0, 0, 0);
 			scene.add(posLight1);
@@ -492,16 +485,12 @@
 
 		}
 
-		// Define a global variable to store the currently selected object
+		// Use Raycaster Mouse Picking to enable scene change
+		// referring to https://sbcode.net/threejs/mousepick/, implemented by Weijie
 		let selectedObject = null;
-
-		// Create a raycaster
 		let raycaster = new THREE.Raycaster();
 		let mouse = new THREE.Vector2();
-
-		// Listen for mouse click event
 		window.addEventListener('mousedown', onMouseDown, false);
-
 		function onMouseDown(event) {
 			// Calculate the normalized device coordinates of the mouse click position
 			mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -532,7 +521,6 @@
 				// If no object is selected, reset the style of the previously selected object
 				if (selectedObject) {
 					// Reset the style of the previously selected object to its original style
-					selectedObject = null;
 					selectedObject = null;
 				}
 			}
