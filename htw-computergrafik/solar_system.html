@@ -121,6 +121,7 @@
 			gui = new GUI();
 
 			const dateFolder = gui.addFolder('Date');
+			// try to adjust the positions of the planets according to a given Date without success
 			monthControl = dateFolder.add(dateData, 'month', 1, 12, 1).name('Month').onChange(function () {
 				if (moveControl.paused) {
 					// timer = 0;
@@ -246,6 +247,7 @@
 				let planetMaterial = new THREE.MeshPhongMaterial({ map: planetTexture });
 				// let planetMaterial = new THREE.MeshPhongMaterial({ transparent: true, color: planet.color });
 				let planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+				planetMesh.name = planet.name;
 
 				// Create planetary orbits
 				let orbitRadius = planet.orbitRadius;
@@ -253,6 +255,7 @@
 				let orbitGeometry = new THREE.CircleGeometry(orbitRadius, orbitPoints);
 				let orbitMaterial = new THREE.MeshBasicMaterial({ transparent: true, color: 0x222222 }); // 设置轨道线的颜色
 				let orbit = new THREE.Line(orbitGeometry, orbitMaterial);
+				orbit.name = planet.name;
 
 				// Set the position of planets and orbits
 				planetMesh.position.set(orbitRadius, 0, 0);
@@ -298,6 +301,7 @@
 				let axisLine = new THREE.Line(axisGeometry, axisMaterial);
 				//axisLine invisible by default
 				axisLine.visible = showRotationAxis.rotation_axis;
+				axisLine.name = planet.name;
 				scene.add(axisLine);
 				planetAxises.push(axisLine);
 
@@ -315,6 +319,7 @@
 				equatorPlane.position.copy(planetMesh.position);
 
 				equatorPlane.visible = showRotationAxis.rotation_axis;
+				equatorPlane.name = planet.name;
 				scene.add(equatorPlane);
 				equatorPlanes.push(equatorPlane);
 
@@ -420,12 +425,13 @@
 			if (!moveControl.paused) {
 				// update timer
 				timer -= 360 / (1 * 1000) * animationSpeed.speed / 5;
+				// create a mapping between timer and the real date
 				dateData.month = (parseInt(-timer / 30) + 2) % 12 + 1;
 				dateData.day = Math.floor((-timer + 20) % 30 + 1);
 				monthControl.setValue(dateData.month);
 				dateControl.setValue(dateData.day);
 
-				// sun rotation
+				// ignore the rotation of sun
 				// sunMesh.rotation.y += 0.001;
 
 				// Planetary rotation and revolution
@@ -465,11 +471,6 @@
 						perspectiveCamera.position.x = planetMesh.position.x + (-planet.radius * Math.cos(latitude) * Math.sin(longitude));
 						perspectiveCamera.position.y = planetMesh.position.y + (planet.radius * Math.sin(latitude) + 0.1);
 						perspectiveCamera.position.z = planetMesh.position.z + (planet.radius * Math.cos(latitude) * Math.cos(longitude));
-
-
-						// perspectiveCamera.position.copy(planetMesh.position);
-						// perspectiveCamera.lookAt(planetMesh.position + 2 * (perspectiveCamera.position - planetMesh.position));
-						// perspectiveCamera.lookAt(perspectiveCamera.position);
 					}
 				}
 			}
@@ -508,11 +509,9 @@
 
 				// Select the new object
 				selectedObject = intersects[0].object;
-				console.log('object selected!');
-				console.log(selectedObject);
 
 				// Modify the style of the selected object
-				if (selectedObject === sunMesh) {
+				if (selectedObject.name === 'Earth') {
 					window.open('./earth_moon.html')
 				}
 
